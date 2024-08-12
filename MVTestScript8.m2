@@ -3,7 +3,7 @@
 
 load "testViaMixedVolume.m2"
 
-outputFile = "mixVolTestOutput.txt"
+outputFile = "mixVolTestOutput8.txt"
 numVertices = 9
 startIndex = 7000
 endIndex = 7999

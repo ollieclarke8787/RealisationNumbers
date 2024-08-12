@@ -170,12 +170,15 @@ testGraphs = method(
 	MinimalMV => false,
 	Verbose => false,
 	StartVal => 0,
-	EdgeEqns => true
+	EndVal => null,
+	EdgeEqns => true,
+	OutputFile => null -- output appended to contents of the file 
 	})
 testGraphs ZZ := opts -> numberVertices -> (
     local m1;
     local m2;
     local n;
+    local file;
     --------------------
     -- Print description
     print("---------------------------------------------------------");
@@ -189,7 +192,12 @@ testGraphs ZZ := opts -> numberVertices -> (
     print("-- i  : graph index");
     print("-- v  : graph representation value");
     print("-- r  : realization number");
-    print("-- m1 : mixed volume bound - usual equations");
+    if opts.EdgeEqns then (
+	print("-- m1 : mixed volume bound - edge equations");
+	)
+    else (
+	print("-- m1 : mixed volume bound - vertex equations");
+	);
     if opts.MixedVol2 then (
 	print("-- m2 : mixed volume bound - modified equations");
 	);
@@ -204,15 +212,26 @@ testGraphs ZZ := opts -> numberVertices -> (
 	    );
 	print("---------------------------------------------------------");
 	);
-    --------------------
     N := numberOfLamanGraphs numberVertices;
-    print("-- There are " | toString N | " Laman graphs to check ...");
-    for i from opts.StartVal to N-1 do (
+    print("-- There are " | toString N | " Laman graphs in total");
+    if opts.StartVal > 0 then (
+	print("Starting at graph index: " | toString opts.StartVal);
+	);
+    if not opts.EndVal === null and opts.EndVal < N-1 then (
+	print("Ending at graph index: " | toString opts.EndVal);
+	);
+    --------------------
+    if not opts.OutputFile === null then (
+	file = openOutAppend opts.OutputFile;
+	file << ("-- vertices: " | toString numberVertices) << endl;
+	);
+    endVal := if not opts.EndVal === null then min(opts.EndVal, N-1) else N-1;
+    for i from opts.StartVal to endVal do (
 	v := getLamanGraphValue(numberVertices, i);
 	G := getLamanGraph(numberVertices, i);
 	r := getRealizations(numberVertices, i);
 	if opts.MinimalMV then ( -- minimal MV dominates the options
-	    m1 = minimalMixedVolume(G, Verbose => opts.Verbose);
+	    m1 = minimalMixedVolume(G, Verbose => opts.Verbose); -- minimal mixed volume over different choices of pinning eqns
 	    n = countNBCBases G;
 	    )
 	else (
@@ -241,13 +260,20 @@ testGraphs ZZ := opts -> numberVertices -> (
 		n = countNBCBases G;
 		);
 	    );
-	if opts.MixedVol2 then (
-	    print(i, v, r, m1, m2, n);
+	output := if opts.MixedVol2 then (
+	    (i, v, r, m1, m2, n)
 	    )
 	else (
-	    print(i, v, r, m1, n);
+	    (i, v, r, m1, n)
 	    );
-	)
+	if not opts.OutputFile === null then (
+	    file << toString output << endl; 
+	    );
+	print output;
+	);
+    if not opts.OutputFile === null then (
+	file << close;
+	);
     )
 
 -- compute the mixed volume using different pinning equations

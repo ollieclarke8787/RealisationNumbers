@@ -172,6 +172,7 @@ testGraphs = method(
 	StartVal => 0,
 	EndVal => null,
 	EdgeEqns => true,
+	AutoGenerateOutputFile => false, 
 	OutputFile => null -- output appended to contents of the file 
 	})
 testGraphs ZZ := opts -> numberVertices -> (
@@ -221,7 +222,11 @@ testGraphs ZZ := opts -> numberVertices -> (
 	print("Ending at graph index: " | toString opts.EndVal);
 	);
     --------------------
-    if not opts.OutputFile === null then (
+    if opts.AutoGenerateOutputFile then (
+	fileName := "MVOutput_v_" | toString numberVertices | "_f_" | toString(opts.EndVal // 1000) | ".txt";
+	file = openOutAppend fileName;
+	)
+    else if not opts.OutputFile === null then (
 	file = openOutAppend opts.OutputFile;
 	file << ("-- vertices: " | toString numberVertices) << endl;
 	);

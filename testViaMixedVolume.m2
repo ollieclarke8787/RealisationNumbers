@@ -180,6 +180,7 @@ testGraphs ZZ := opts -> numberVertices -> (
     local m2;
     local n;
     local file;
+    local isFile;
     --------------------
     -- Print description
     print("---------------------------------------------------------");
@@ -222,13 +223,16 @@ testGraphs ZZ := opts -> numberVertices -> (
 	print("Ending at graph index: " | toString opts.EndVal);
 	);
     --------------------
+    isFile = false;
     if opts.AutoGenerateOutputFile then (
 	fileName := "MVOutput_v_" | toString numberVertices | "_f_" | toString(opts.EndVal // 1000) | ".txt";
 	file = openOutAppend fileName;
+	isFile = true;
 	)
     else if not opts.OutputFile === null then (
 	file = openOutAppend opts.OutputFile;
 	file << ("-- vertices: " | toString numberVertices) << endl;
+	isFile = true
 	);
     endVal := if not opts.EndVal === null then min(opts.EndVal, N-1) else N-1;
     for i from opts.StartVal to endVal do (
@@ -271,12 +275,12 @@ testGraphs ZZ := opts -> numberVertices -> (
 	else (
 	    (i, v, r, m1, n)
 	    );
-	if not opts.OutputFile === null then (
+	if isFile then (
 	    file << toString output << endl; 
 	    );
 	print output;
 	);
-    if not opts.OutputFile === null then (
+    if isFile then (
 	file << close;
 	);
     )

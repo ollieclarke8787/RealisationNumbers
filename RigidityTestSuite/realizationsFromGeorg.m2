@@ -9,6 +9,12 @@
 -- see: https://zenodo.org/records/1245517
 
 
+-- if this is loaded without packageDirectory then set it to "./"
+if (class packageDirectory) === Symbol then (
+    packageDirectory = "./"
+    )
+
+
 -- This file requires the Graphs package
 needsPackage "Graphs"
 
@@ -24,7 +30,7 @@ getLamanGraphRealizationList ZZ := numberVertices -> (
 	error("expected numberVertices between 3 and 10");
 	);
     if not LamanGraphRealizations#?numberVertices then (
-	fileName := "./Realizations3-10/Realizations" | toString numberVertices | ".txt";
+	fileName := packageDirectory | "Realizations3-10/Realizations" | toString numberVertices | ".txt";
 	fileContents := get fileName;
 	LamanGraphRealizations#numberVertices = value fileContents;
 	);
@@ -48,7 +54,7 @@ getLamanGraphValueList ZZ := numberVertices -> (
 	error("expected numberVertices between 3 and 10");
 	);
     if not LamanGraphValues#?numberVertices then (
-	fileName := "./LamanGraphs3-10/LamanGraphs" | toString numberVertices | ".txt";
+	fileName := packageDirectory | "LamanGraphs3-10/LamanGraphs" | toString numberVertices | ".txt";
 	fileContents := get fileName;
 	LamanGraphValues#numberVertices = value fileContents;
 	);

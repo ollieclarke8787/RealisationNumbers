@@ -286,9 +286,9 @@ testGraphs ZZ := opts -> numberVertices -> (
 -- return the minimum
 minimalMixedVolume = method(
     Options => {
-	CheckNeighbors => true,
-	Verbose => true,
-	ChangeOfVars => true
+	CheckNeighbors => true,	 -- 
+	Verbose => true,	 -- print out intermediate steps
+	ChangeOfVars => true	 -- use (x_i - x_j)(y_i - y_j) - \lambda
 	}
     )
 minimalMixedVolume Graph := opts -> G -> (

@@ -73,7 +73,8 @@ doc ///
     Description
         Text
 	    A package for computing examples that come from rigidity theory.
-	    This code accompanies the paper {\em TODO: ADD TITLE OF PAPER}.
+	    This code accompanies the paper {\em A tropical approach to rigidity:
+	    counting realisations of frameworks}.
 	    The package includes the data from
 	    @HREF{"https://zenodo.org/records/1245517"}@
 	    of all minimally rigid graphs on up to
@@ -119,7 +120,7 @@ doc ///
     References
 	@HREF("https://zenodo.org/records/1245517",
 	    "Capco, Gallet, Grassegger, Koutschan, Lubbes, Schicho,
-	    The number of realiztions of all Laman graphs with at most 12 vertices")@
+	    The number of realizations of all Laman graphs with at most 12 vertices")@
 
 	@arXiv("1701:05500",
 	    "Capco, Gallet, Grassegger, Koutschan, Lubbes, Schicho,
@@ -142,7 +143,6 @@ doc ///
 	[rigidityEquations, RandomVal]
 	 ChangeOfVars
 	 PinWithEdge
-	 RandomVal
     Headline
 	rigidity equations of a graph
     Usage
@@ -178,8 +178,17 @@ doc ///
 	Example
 	    I = ideal rigidityEquations(G, RandomVal => false);
 	    member(1, I) -- 1 belongs to I <=> V(I) is empty
+    Subnodes
+	edgeEquations
+	modifiedEquations
+	realizationsFromMixedVolume
+	minimalMixedVolume
+	RandomVal
     SeeAlso
-	script1
+	edgeEquations
+	modifiedEquations
+        script1
+	RandomVal
 ///
 
 
@@ -195,6 +204,7 @@ doc ///
 	 getRealizations
 	(getRealizations, ZZ, ZZ)
 	 packageDirectory
+	"packageDirectory"
     Headline
         fetch, count, get realization numbers of Laman graphs
     Usage
@@ -264,6 +274,7 @@ doc ///
 	 realisationBases
 	(realisationBases, Matroid)
 	 edgeList
+	(edgeList, Graph)
 	(matroid, Graph, List)
     Headline
         working with nbc and realization bases
@@ -365,6 +376,7 @@ doc ///
 	[testGraphs, EdgeEqns]
 	[testGraphs, OutputFile]
 	[testGraphs, AutoGenerateOutputFile]
+	[testGraphs, RandomVal]
 	 ShowTimings
 	 MixedVol2
 	 MinimalMV
@@ -393,13 +405,19 @@ doc ///
 	    script1 5
 	Text
 	    The script runs the function @TT "testGraphs"@, which has more options
-	    to give fine control over which families of equations are used. For
-	    instance, one can use the {\em edge equations} for the mixed volume
+	    to give fine control over which families of equations are used.
+	    Some of the options for @TT "testGraphs"@ are passed on to
+	    the function @TO "rigidityEquations"@ when writing down the rigidity
+	    equations. The other options are for controlling the computation
+	    and its output. For instance,
+	    one can use the {\em edge equations} for the mixed volume
 	    bound by setting the option @TT "EdgeEqns"@ to @TT "true"@. One can
 	    also add the computation of the mixed volume bound given by the
 	    {\em modified equations} with the option @TT "MixedVol2"@, which is
 	    set to true by default. However this bound tends to be very high
-	    so it recommended to avoid using it.
+	    so it recommended to avoid using it. For more details on the modified
+	    equations see the functions @TO "modifiedEquations"@ and
+	    @TO "edgeEquations"@.
 	Example
 	    testGraphs(5, MixedVol2 => false, EdgeEqns => true)
 	Text
@@ -435,31 +453,263 @@ doc ///
 	rigidityEquations
 ///
 
-
-
-
--*
 doc ///
     Key
+	edgeEquations
+       (edgeEquations, Graph)
+       [edgeEquations, RemoveAnEdge]
+       [edgeEquations, UseCorrectCoefficients]
+        RemoveAnEdge
+	UseCorrectCoefficients
     Headline
+	list the edge equations of a graph
     Usage
+	F = edgeEquations G
     Inputs
+	G: Graph
+	    graph with m edges
+	RemoveAnEdge => Boolean
+	    (not implemented) remove the variables corresponding to the pinning
+	    equations and adjust the ambient ring
+	UseCorrectCoefficients => Boolean
+	    (not implemented) use generic values for the coefficients $\lambda_{ij}$
+	    and the correct coefficients for the cycle equations
     Outputs
-    Consequences
-        Item
+	F: List
+	    list of edge equations and vertex-pinning equations
     Description
         Text
+	    Consider the following graph given by $K_4$ on vertices
+	    $\{0,1,2,3\}$ minus the edge $13$.
 	Example
-	CannedExample
-	Code
-	Pre
-    ExampleFiles
-    Contributors
-    References
-    Caveat
+	    G = graph {{0,1}, {1,2}, {2,3}, {0,3}, {0,2}} -- K4 minus an edge
+        Text
+	    {\bf Background.}
+	    The {\em edge equations} lie in the ring with variables $x_{ij}, y_{ij}$
+	    for each edge $ij$ of $G$. We call these, the edge variables.
+	    So, in this example, the edge equations
+	    belong to a polynomial ring with $10$ edge variables.
+
+	    Consider the rigidity equations,
+	    @TO "rigidityEquations"@, which are given by 
+	    $(x_i - x_j)(y_i - y_j) - \lambda_{ij}$ for each edge $ij$ of $G$.
+	    Intuitively, the edge equations are obtained by setting
+	    $x_{ij} = (x_i - x_j)$ and $y_{ij} = (y_i - y_j)$. If the variables
+	    $x_i$ and $y_i$ satisfy the rigidity equations, then clearly
+	    the edge variables satisfy $x_{ij} y_{ij} - \lambda_{ij} = 0$ for
+	    all edges $ij$. However, there are some more equations that the edge
+	    variables satisfy.
+
+	    Suppose we orient our graph. Given a (not necessarily oriented) cycle
+	    $C$, we obtain two equations for the edge variabes. Suppose that by
+	    traversing $C$ in one direction we see the edges $e_1, e_2, \dots, e_k$.
+	    For each $i \in [k]$, write $s_i = 1$ if $e_1$ is oriented concurrent
+	    to traversal direction, otherwise write $s_i = -1$ if the edge is oriented
+	    against the direction of travel. The equations we obtain are
+	    $s_1x_{e_1} + s_2x_{e_2} + \dots + s_kx_{e_k}$ and
+	    $s_1y_{e_1} + s_2y_{e_2} + \dots + s_ky_{e_k}$. We call these equations
+	    the {\em cycle equations}.
+
+	    The set of edge equations is the union of the equations
+	    $x_e y_e - \lambda_e$ for edges $e$ and the cycle equations.
+	    The ideal generated by these equations is minimally generated by
+	    a subset of $x_e y_e - \lambda_e$ together with only those cycle
+	    equations that form a cycle basis.
+
+	    So, for a Laman graph with $n$ vertices and $2n-3$ edges, the
+	    ideal of edge equations lies in a ring with $2(2n-3)$ variables.
+	    There are $2n-3$ equations of the form $x_e y_e - \lambda_e$.
+	    The number of cycle equations is equal to the number of loops in the
+	    graphic matroid if we contract a spanning tree. In this case, a
+	    spanning tree has $n-1$ edges. So contracting it leaves $n-2$ loops.
+	    So a cycle basis has size $n-2$. Therefore, there are $2(n-2)$ cycle
+	    equations, which gives a total of $4n-7$ edge equations. For generic
+	    choices of $\lambda_e$, the edge equations carve out a one-dimensional
+	    affine variety. So we define a pinning equation $x_e - 1$ for some
+	    edge $e$.
+
+	    {\bf Code.} The function @TT "edgeEquations"@ lists the
+	    edge equations of the graph. The options @TT "RemoveAnEdge"@ and
+	    @TT "CorrectCoefficients"@ are currently not implemented. So
+	    all the generic scalar values, and circuit equation coefficients are
+	    $1$. In particular, they are not generic or correct. These equations
+	    can be used for applying a mixed volume bound, as the mixed volume
+	    only cares about the case with generic coefficients.
+	Example
+	    F = edgeEquations G;
+	    netList F
+	    gfanMixedVolume F
+	Text
+	    For the developer. Note that the mixed volume returned by gfan is
+	    of class @TO "String"@, and not an integer.
     SeeAlso
+	rigidityEquations
+	testGraphs
 ///
-*-
+
+doc ///
+    Key
+	modifiedEquations
+       (modifiedEquations, Graph)
+       [modifiedEquations, RandomVal]
+    Headline
+	modified rigidity equations
+    Usage
+	F = modifiedEquations G
+    Inputs
+	G: Graph
+	RandomVal => Boolean
+	    use random coefficients for the rigidity equations 
+    Outputs
+	F: List
+	    modified rigidity equations
+    Description
+        Text
+	    The modified rigidity equations are a hybrid of the
+	    rigidity equations and the edge equations. See
+	    @TO "rigidityEquations"@ and @TO  "edgeEquations"@.
+	Example
+	    G = graph {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {2, 3}}
+	    F = modifiedEquations G;
+	    netList F
+	Text
+	    The ambient ring of the modified equations includes the vertex
+	    varaibles, denoted $x_{0,i}$ and $x_{1,i}$ for each vertex $i$
+	    of $G$, and the edge variables $y_{e,0}$ and $y_{e,1}$ for each
+	    edge $e$ of $G$.
+
+	    The options @TT "RandomVal"@ may be set to @TT "false"@ if the
+	    coefficients of the equations are not important. For instance,
+	    if one is performing a mixed volume bound computation, then
+	    you may set the option to @TT "false"@.
+	Example
+	    F' = modifiedEquations(G, RandomVal => false);
+	    netList F'
+	    gfanMixedVolume F
+	    gfanMixedVolume F'
+    SeeAlso
+	rigidityEquations
+	edgeEquations
+	testGraphs
+	RandomVal
+///
+
+doc ///
+    Key
+	RandomVal
+    Headline
+	give random coefficients
+    Description
+        Text
+	    This option applies to the functions @TO "rigidityEquations"@
+	    and @TO "modifiedEquations"@. By default, it is set to
+	    @TT "true"@ and gives the rigidity equations random coefficients
+	    $\lambda_{ij}$ and random values for the pinning equations.
+	Example
+	    G = graph {{0, 1}, {0, 2}, {0, 3}, {1, 2}, {2, 3}}
+	    netList rigidityEquations G
+	    netList rigidityEquations(G, RandomVal => false)
+	Text
+	    If the option is set to @TT "false"@ then the coefficients
+	    are set to one.
+    SeeAlso
+	rigidityEquations
+	modifiedEquations
+///
+
+
+doc ///
+    Key
+	minimalMixedVolume
+       (minimalMixedVolume, Graph)
+       [minimalMixedVolume, CheckNeighbors]
+       [minimalMixedVolume, Verbose]
+       [minimalMixedVolume, ChangeOfVars]
+        CheckNeighbors
+    Headline
+	minimal mixed volume with different pinning equations
+    Usage
+	v = minimalMixedVolume G
+    Inputs
+	G: Graph
+	    A Laman graph with n vertices
+	CheckNeighbors => Boolean
+	    pin only those vertices that are adjacent to vertex 0
+	Verbose => Boolean
+	    print the mixed volumes for all checked pinned vertices
+	ChangeOfVars => Boolean
+	    use the equations $(x_i - x_j)(y_i - y_j) - \lambda_{ij}$
+	    instead of $(x_i - y_i)^2 + (x_j - y_j)^2 - \lambda_{ij}$
+    Outputs
+	v: ZZ
+	    minimal mixed volume bound ranging over different pinning equations
+    Description
+        Text
+	    The rigidity equations produced by the function
+	    @TO "rigidityEquations"@ include pinning equations given by
+	    $x_0 - a, y_0 - b, x_1 - c$ where $a,b,c$ are some generic
+	    values. This function modifies the last equation $x_1 - c$
+	    and computes the mixed volume bound when this equation is
+	    replaced with $x_i - c$ for some different $i$.
+
+	    If the option @TT "CheckNeighbors"@ is @TT "true"@ then $i$ above
+	    is taken so that $0i$ is an edge of $G$. Otherwise $i$ ranges over
+	    all vertices of $G$ with $i \neq 0$. 
+	Example
+	    G = graph {{0, 1}, {0, 3}, {1, 2}, {1,3}, {2, 3}}
+	    minimalMixedVolume(G, CheckNeighbors => false)
+	    minimalMixedVolume(G, CheckNeighbors => true)
+    SeeAlso
+	rigidityEquations
+///
+
+doc ///
+    Key
+	realizationsFromMixedVolume
+       (realizationsFromMixedVolume, Graph)
+       [realizationsFromMixedVolume, PolynomialSource]
+       [realizationsFromMixedVolume, RandomVal]
+        PolynomialSource
+    Headline
+        compute mixed volume bound of realization number
+    Usage
+	r = realizationsFromMixedVolume G
+    Inputs
+	G: Graph
+	    A Laman graph
+	PolynomialSource => String
+	    one of "rm-new", "rm-old", "mod", "edge"
+	RandomVal => Boolean
+	    use random coefficients for the equations
+    Outputs
+	r: ZZ
+	    mixed volume bound for realization number
+    Description
+        Text
+	    The function computes the mixed volume bound for the rigidity equations
+	    of a graph $G$.
+	Example
+	    G = graph {{0, 1}, {0, 3}, {1, 2}, {1,3}, {2, 3}}
+	    realizationsFromMixedVolume G
+	Text
+	    By default the option @TT "PolynomialSource"@ is set to "rm-new", which
+	    means that the rigidity equations are of the form
+	    $(x_i - x_j)(y_i - y_j) - \lambda_{ij}$. The other values for this
+	    option are: "rm-old", which will use equations
+	    $(x_i - y_i)^2 + (x_j - y_j)^2 - \lambda_{ij}$;
+	    "mod", which will use the modified equations, see
+	    @TO "modifiedEquations"@; and "edge", which uses the
+	    edge equations, see @TO "edgeEquations"@.
+	Example
+	    realizationsFromMixedVolume(G, PolynomialSource => "edge")
+	    realizationsFromMixedVolume(G, PolynomialSource => "rm-old")
+    SeeAlso
+	rigidityEquations
+	modifiedEquations
+	edgeEquations
+	RandomVal
+///
+
 
 -* Test section *-
 TEST /// -* [insert short title for this test] *-

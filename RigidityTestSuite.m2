@@ -1,15 +1,18 @@
 newPackage(
     "RigidityTestSuite",
-    Version => "0.1",
+    Version => "0.2",
     Date => "October 18, 2024",
-    Headline => "Tropical approach to rigidity examples",
+    Headline => "'Tropical approach to rigidity' examples",
     Authors => {
 	{Name => "Oliver Clarke", Email => "oliver.clarke.crgs@gmail.com", HomePage => "oliverclarkemath.com"}},
     AuxiliaryFiles => true,
     DebuggingMode => false,
-    PackageExports => {"Tropical", "gfanInterface", "Graphs", "Matroids"}
+    PackageExports => {"gfanInterface", "Graphs", "Matroids"}
     )
-    
+
+-- #############
+-- ## Exports ##
+-- #############
 export {
     -- >> Option names << --
     "AutoGenerateOutputFile",
@@ -55,6 +58,11 @@ export {
     "packageDirectory"
     }
 
+-- the packageDirectory stores the location of the auxiliary files
+-- it is used by ./RigidityTestSuite/realizationsFromGeorg.m2
+-- packageDirectory uses the location of the package once it is installed
+-- NB. It is not possible to use "./" instead because it causes
+-- errors when making examples in the documentation
 packageDirectory = applicationDirectory() | "local/share/Macaulay2/RigidityTestSuite/"
 
 needs "./RigidityTestSuite/realizationsFromGeorg.m2"
@@ -63,6 +71,10 @@ needs "./RigidityTestSuite/nbcBases.m2"
 needs "./RigidityTestSuite/realizationBases.m2"
 needs "./RigidityTestSuite/scripts.m2"
 
+
+-- ###################
+-- ## Documentation ##
+-- ###################
 beginDocumentation()
     
 doc ///
@@ -710,13 +722,207 @@ doc ///
 	RandomVal
 ///
 
+-- ###########
+-- ## Tests ##
+-- ###########
 
--* Test section *-
-TEST /// -* [insert short title for this test] *-
--- test code and assertions here
--- may have as many TEST sections as needed
+-----------------
+-- nbcBases.m2 --
+-----------------
+-- (0) nbcBases(M: Matroid)
+TEST ///
+G = graph {{0,1}, {0,2}, {1,2}};
+M = matroid G;
+-- broken circuit: {0,1,2} - {0} = {1,2} 
+B = nbcBases M;
+assert (B == {set {0,2}, set {0,1}});
 ///
-    
+
+-------------------------
+-- realizationBases.m2 --
+-------------------------
+-- (1) realisationBases(M: Matroid)
+TEST ///
+G = graph {{0,1}, {0,2}, {1,2}};
+M = matroid G;
+-- broken circuit: {0,1,2} - {0} = {1,2} 
+B = realisationBases M;
+assert (B == {set {0,2}, set {0,1}});
+///
+
+-- (2) matroid(G: Graph, P: List)
+TEST ///
+G = graph {{0,1}, {0,2}, {1,2}};
+E = edges G;
+P = {1,2,0};
+M = matroid(G, P);
+assert (M.cache.groundSet == {E#2, E#0, E#1});
+///
+
+-- (3) edgeList(G: Graph)
+TEST ///
+G = graph {{0,1}, {0,2}, {1,2}};
+E = edgeList G;
+assert(E == {{0,1}, {0,2}, {1,2}});
+///
+
+------------------------------
+-- realizationsFromGeorg.m2 --
+------------------------------
+-- (4) getLamanGraphRealizationList(n: ZZ)
+TEST ///
+R3 = getLamanGraphRealizationList 3;
+R4 = getLamanGraphRealizationList 4;
+R5 = getLamanGraphRealizationList 5;
+assert(R3 == {2});
+assert(R4 == {4});
+assert(R5 == {8,8,8});
+///
+
+-- (5) getRealizations(n: ZZ, i: ZZ)
+TEST ///
+assert(getRealizations(6,0) == 16);
+assert(getRealizations(6,1) == 16);
+assert(getRealizations(6,2) == 16);
+assert(getRealizations(6,3) == 24);
+///
+
+-- (6) numberOfLamanGraphs(n: ZZ)
+TEST ///
+assert(numberOfLamanGraphs(3) == 1);
+assert(numberOfLamanGraphs(4) == 1);
+assert(numberOfLamanGraphs(5) == 3);
+assert(numberOfLamanGraphs(6) == 13);
+///
+
+-- (7)  getLamanGraph(n: ZZ, i: ZZ)
+TEST /// 
+G = getLamanGraph(6,0);
+M = matrix {{0,0,0,0,1,1},
+    {0,0,0,0,1,1},
+    {0,0,0,1,1,1},
+    {0,0,1,0,1,1},
+    {1,1,1,1,0,0},
+    {1,1,1,1,0,0}};
+assert(adjacencyMatrix G == M);
+///
+
+--------------------------
+-- rigidityEquations.m2 --
+--------------------------
+-- (8) rigidityEquations(G: Graph)
+TEST ///
+G = graph {{0,1}, {0,2}, {1,2}};
+F = matrix {rigidityEquations(G, RandomVal => false)};
+R = ring F;
+result = matrix {{
+    (R_0 - R_1)*(R_3 - R_4) - 1,
+    (R_0 - R_2)*(R_3 - R_5) - 1,
+    (R_1 - R_2)*(R_4 - R_5) - 1,
+    R_0 - 1,
+    R_3 - 1,
+    R_1 - 1
+    }};
+assert(F == result);
+///
+
+-- (9) modifiedEquations(G: Graph)
+TEST ///
+G = graph {{0,1}, {0,2}, {1,2}};
+F = matrix {modifiedEquations(G, RandomVal => false)};
+R = ring F;
+result = matrix {{
+	R_6*R_9 - 1,
+	R_7*R_10 - 1,
+	R_8*R_11 - 1,
+	R_6 - (R_0 - R_1),
+	R_7 - (R_0 - R_2),
+	R_8 - (R_1 - R_2),
+	R_9 - (R_3 - R_4),
+	R_10 - (R_3 - R_5),
+	R_11 - (R_4 - R_5),
+	R_0 - 1,
+	R_3 - 1,
+	R_1 - 1
+    }};
+assert(F == result);
+///
+
+-- (10) realizationsFromMixedVolume(G: Graph)
+TEST ///
+G = graph {{0,1}, {0,2}, {1,2}};
+assert(realizationsFromMixedVolume G == 2);
+assert(realizationsFromMixedVolume(G, PolynomialSource => "rm-old") == 8);
+assert(realizationsFromMixedVolume(G, PolynomialSource => "mod") == 2);
+assert(realizationsFromMixedVolume(G, PolynomialSource => "edge") == 2);
+///
+
+-- (11) countNBCBases(G: Graph)
+TEST ///
+G = graph {{0,1}, {0,2}, {1,2}};
+assert(countNBCBases G == 2);
+///
+
+-- (12) testGraphs(n: ZZ)
+TEST ///
+testGraphs 3
+///
+
+-- (13) minimalMixedVolume(G: Graph)
+TEST ///
+G = graph {{0,1}, {0,2}, {1,2}};
+assert(minimalMixedVolume G == 2);
+assert(minimalMixedVolume(G, CheckNeighbors => false) == 2);
+assert(minimalMixedVolume(G, CheckNeighbors => false, ChangeOfVars => false) == 8);
+///
+
+-- (14) edgeEquations(G: Graph)
+TEST ///
+G = graph {{0,1}, {0,2}, {1,2}};
+F = matrix {edgeEquations(G, UseCorrectCoefficients => false, RemoveAnEdge => false)};
+R = ring F;
+result = matrix {{
+	R_0*R_3 - 1,
+	R_1*R_4 - 1,
+	R_2*R_5 - 1,
+	R_0+R_1+R_2,
+	R_3+R_4+R_5,
+	R_0-1}};
+assert(result == F);
+///
+
+----------------
+-- scripts.m2 --
+----------------
+-- (15) script1(n: ZZ), script2(n: ZZ)
+TEST ///
+script1(3);
+script2(3);
+///
+
+-----------------
+-- Other tests --
+-----------------
+-- (16) packageDirectory
+TEST ///
+graphFileList = sort findFiles(packageDirectory | "LamanGraphs3-10/");
+result = (
+    for i from 3 to 10 list (
+	packageDirectory | "LamanGraphs3-10/LamanGraphs" | toString i | ".txt"
+	)
+    ) | {(packageDirectory | "LamanGraphs3-10/")};
+graphFileResult = sort result;
+assert(graphFileList == graphFileResult);
+realizationFileList = sort findFiles(packageDirectory | "Realizations3-10/");
+result = (
+    for i from 3 to 10 list (
+	packageDirectory | "Realizations3-10/Realizations" | toString i | ".txt"
+	)
+    ) | {(packageDirectory | "Realizations3-10/")};
+realizationFileResult = sort result;
+assert(realizationFileList == realizationFileResult);
+///
+
 end--
     
 -* Development section *-

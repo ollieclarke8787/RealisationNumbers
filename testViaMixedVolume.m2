@@ -223,9 +223,10 @@ testGraphs ZZ := opts -> numberVertices -> (
 	print("Ending at graph index: " | toString opts.EndVal);
 	);
     --------------------
+    endVal := if not opts.EndVal === null then min(opts.EndVal, N-1) else N-1;
     isFile = false;
     if opts.AutoGenerateOutputFile then (
-	fileName := "MVOutput_v_" | toString numberVertices | "_f_" | toString(opts.EndVal // 1000) | ".txt";
+	fileName := "MVOutput_v_" | toString numberVertices | "_f_" | toString(endVal // 1000) | ".txt";
 	file = openOutAppend fileName;
 	isFile = true;
 	)
@@ -234,7 +235,6 @@ testGraphs ZZ := opts -> numberVertices -> (
 	file << ("-- vertices: " | toString numberVertices) << endl;
 	isFile = true
 	);
-    endVal := if not opts.EndVal === null then min(opts.EndVal, N-1) else N-1;
     for i from opts.StartVal to endVal do (
 	v := getLamanGraphValue(numberVertices, i);
 	G := getLamanGraph(numberVertices, i);

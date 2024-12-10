@@ -139,6 +139,91 @@ print ""
 *-
 
 
+-- histogram of a List
+histogram = method(
+    Options => {
+	BucketSize => null, -- automatically choose a bucket size based on data
+	MinVal => null -- automatically use the minimum of data
+	}
+    )
+histogram List := opts -> data -> (
+    -- a bucket is a collection of data points that lies in an half open interval
+    -- [x, x+s) where s is the size of the bucket
+    -- all buckets will be of the same size and start at the minimum of the dataset
+    minVal := infinity;
+    
+    maxVal := -infinity;
+    
+    if #data == 0 then error("data is empty");
+    
+    for val in data do (
+	if val < minVal then (
+	    minVal = val;
+    
+	    );
+	if val > maxVal then (
+	    maxVal = val;
+    
+	    );
+	);
+    if opts.MinVal =!= null then (
+	if opts.MinVal > minVal then error("min value of optional input is smaller than minimum value of data")
+	else minVal = opts.MinVal;
+    
+	);
+    bucketSize := if opts.BucketSize =!= null then opts.BucketSize else (maxVal - minVal) / 10;
+    
+    histogram := new MutableHashTable from (
+	i := 0;
+    
+	iMax := (maxVal - minVal)/bucketSize + 1;
+    
+	while i < iMax list i => 0 do i = i + 1
+	);
+    for val in data do (
+	bucketNumber := floor((val - minVal)/bucketSize);
+    
+	histogram#bucketNumber = histogram#bucketNumber + 1;
+    
+	);
+    new HashTable from for i in keys histogram list minVal + i*bucketSize => histogram#i
+    )
+    
+displayHistogram = method()
+displayHistogram HashTable := H -> (
+    for key in sort keys H do (
+	print(toString key | ": " | toString H#key);
+    
+	);
+    )
+    
+    
+--------------------------
+-- Histograms
+--------------------------
+    
+bucketSize = 0.2
+histMVol = histogram(mVolvRNumNormed, BucketSize => bucketSize, MinVal => 0);
+    
+histNBC = histogram(NBCvRNumNormed, BucketSize => bucketSize, MinVal => 0);
+    
+    
+print "----------------------------------------"
+print "-- Histogram for normalised NBC bases --"
+print "----------------------------------------"
+print "-- bucket minimum: count"
+print ""
+displayHistogram histNBC
+print ""
+print ""
+    
+    
+print "-----------------------------------------------"
+print "-- Histogram for normalised Mixed Vol. bound --"
+print "-----------------------------------------------"
+print "-- bucket minimum: count"
+print ""
+displayHistogram histMVol
 
 end --
 load "collectResults.m2"
